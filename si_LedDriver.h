@@ -33,7 +33,7 @@
 
 
 #define LED_I2C_SLAVE_ADDRESS   0x38
-#define ledI2cWriteByte(cmd, data)              HalI2cBus0WriteByte(LED_I2C_SLAVE_ADDRESS, cmd, data);
+#define ledI2cWriteByte(cmd, data)              HalI2cBus0WriteByte(0,LED_I2C_SLAVE_ADDRESS, cmd, data);
 
 
 void ledInit(void);

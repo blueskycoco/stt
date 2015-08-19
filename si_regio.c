@@ -33,7 +33,7 @@ static uint8_t  XDATA l_regioDecodePage [16] =
 //              Used to change from the default value if necessary.
 //------------------------------------------------------------------------------
 
-void SiIRegioSetBase ( uint8_t page, uint8_t newID )
+void SiIRegioSetBase (int index, uint8_t page, uint8_t newID )
 {
 
     if ( page < sizeof( l_regioDecodePage ))
@@ -46,15 +46,15 @@ void SiIRegioSetBase ( uint8_t page, uint8_t newID )
 
         switch ( page )
         {
-        case  2:    SiIRegioWrite( REG_SLAVE_ADDR6, newID );    break;
-        case  4:    SiIRegioWrite( REG_SLAVE_ADDR7, newID );    break;
-        case  8:    SiIRegioWrite( REG_SLAVE_ADDR2, newID );    break;
-        case  9:    SiIRegioWrite( REG_SLAVE_ADDR3, newID );    break;
-        case 10:    SiIRegioWrite( REG_SLAVE_ADDR4, newID );    break;
-        case 11:    SiIRegioWrite( REG_SLAVE_ADDR5, newID );    break;
-        case 12:    SiIRegioWrite( REG_SLAVE_ADDR1, newID );    break;
-        case 13:    SiIRegioWrite( REG_SLAVE_ADDR0, newID );    break;
-        case 14:    SiIRegioWrite( REG_SLAVE_ADDR5, newID );    break;
+        case  2:    SiIRegioWrite(index, REG_SLAVE_ADDR6, newID );    break;
+        case  4:    SiIRegioWrite(index, REG_SLAVE_ADDR7, newID );    break;
+        case  8:    SiIRegioWrite(index, REG_SLAVE_ADDR2, newID );    break;
+        case  9:    SiIRegioWrite(index, REG_SLAVE_ADDR3, newID );    break;
+        case 10:    SiIRegioWrite(index, REG_SLAVE_ADDR4, newID );    break;
+        case 11:    SiIRegioWrite(index, REG_SLAVE_ADDR5, newID );    break;
+        case 12:    SiIRegioWrite(index, REG_SLAVE_ADDR1, newID );    break;
+        case 13:    SiIRegioWrite(index, REG_SLAVE_ADDR0, newID );    break;
+        case 14:    SiIRegioWrite(index, REG_SLAVE_ADDR5, newID );    break;
         default:                                                break;
         }
     }
@@ -69,10 +69,10 @@ void SiIRegioSetBase ( uint8_t page, uint8_t newID )
 //              to perform an I2C read operation.
 //------------------------------------------------------------------------------
 
-uint8_t SiIRegioRead ( uint16_t regAddr )
+uint8_t SiIRegioRead (int index, uint16_t regAddr )
 {
 
-    return( HalI2cBus0ReadByte( l_regioDecodePage[ regAddr >> 8], (uint8_t)regAddr ));
+    return( HalI2cBus0ReadByte(index, l_regioDecodePage[ regAddr >> 8], (uint8_t)regAddr ));
 }
 
 //------------------------------------------------------------------------------
@@ -83,10 +83,10 @@ uint8_t SiIRegioRead ( uint16_t regAddr )
 //              are used to perform an I2C write operation.
 //------------------------------------------------------------------------------
 
-void SiIRegioWrite ( uint16_t regAddr, uint8_t value )
+void SiIRegioWrite (int index, uint16_t regAddr, uint8_t value )
 {
 
-    HalI2cBus0WriteByte( l_regioDecodePage[ regAddr >> 8], (uint8_t)regAddr, value );
+    HalI2cBus0WriteByte(index, l_regioDecodePage[ regAddr >> 8], (uint8_t)regAddr, value );
 }
 
 //------------------------------------------------------------------------------
@@ -132,17 +132,17 @@ void SiIRegioWriteBlock ( uint16_t regAddr, uint8_t* buffer, uint16_t length)
 //              This is a common operation for toggling a bit manually.
 //------------------------------------------------------------------------------
 
-void SiIRegioBitToggle ( uint16_t regAddr, uint8_t mask)
+void SiIRegioBitToggle (int index, uint16_t regAddr, uint8_t mask)
 {
     uint8_t slaveID, abyte;
 
     slaveID = l_regioDecodePage[ regAddr >> 8];
 
-    abyte = HalI2cBus0ReadByte( slaveID, (uint8_t)regAddr );
+    abyte = HalI2cBus0ReadByte(index, slaveID, (uint8_t)regAddr );
     abyte |=  mask;                                         //first set the bits in mask
-    HalI2cBus0WriteByte( slaveID, (uint8_t)regAddr, abyte);        //write register with bits set
+    HalI2cBus0WriteByte(index, slaveID, (uint8_t)regAddr, abyte);        //write register with bits set
     abyte &= ~mask;                                         //then clear the bits in mask
-    HalI2cBus0WriteByte( slaveID, (uint8_t)regAddr, abyte);        //write register with bits clear
+    HalI2cBus0WriteByte(index, slaveID, (uint8_t)regAddr, abyte);        //write register with bits clear
 }
 
 //------------------------------------------------------------------------------
@@ -161,15 +161,15 @@ void SiIRegioBitToggle ( uint16_t regAddr, uint8_t mask)
 //              changed to the values given.
 //------------------------------------------------------------------------------
 
-void SiIRegioModify ( uint16_t regAddr, uint8_t mask, uint8_t value)
+void SiIRegioModify (int index, uint16_t regAddr, uint8_t mask, uint8_t value)
 {
     uint8_t slaveID, abyte;
 
     slaveID = l_regioDecodePage[ regAddr >> 8];
 
-    abyte = HalI2cBus0ReadByte( slaveID, (uint8_t)regAddr );
+    abyte = HalI2cBus0ReadByte(index, slaveID, (uint8_t)regAddr );
     abyte &= (~mask);                                       //first clear all bits in mask
     abyte |= (mask & value);                                //then set bits from value
-    HalI2cBus0WriteByte( slaveID, (uint8_t)regAddr, abyte);
+    HalI2cBus0WriteByte(index, slaveID, (uint8_t)regAddr, abyte);
 }
 

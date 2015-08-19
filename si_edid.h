@@ -94,12 +94,12 @@ extern @near const uint8_t g_edidFPGAEdidTable [ EDID_TABLE_LEN ];
 //
 //------------------------------------------------------------------------------
 
-void si_EdidReadPortRam( uint8_t ramIndex, uint8_t sourceOffset, uint8_t *pDest, uint16_t length );
-void si_EdidReadBootRam( uint8_t *pDest, uint8_t sourceOffset, uint8_t length );
-void si_EdidWritePortRam( uint8_t ramIndex, uint8_t *pSource, uint8_t sourceOffset, uint16_t length );
-void si_EdidWriteBootRam( uint8_t *pSource, uint8_t sourceOffset, uint8_t length );
+void si_EdidReadPortRam(int index, uint8_t ramIndex, uint8_t sourceOffset, uint8_t *pDest, uint16_t length );
+void si_EdidReadBootRam(int index, uint8_t *pDest, uint8_t sourceOffset, uint8_t length );
+void si_EdidWritePortRam(int index, uint8_t ramIndex, uint8_t *pSource, uint8_t sourceOffset, uint16_t length );
+void si_EdidWriteBootRam(int index, uint8_t *pSource, uint8_t sourceOffset, uint8_t length );
 
-BOOL si_NvramCommand( uint8_t command );
+BOOL si_NvramCommand(int index, uint8_t command );
 
 //------------------------------------------------------------------------------
 //
@@ -107,12 +107,12 @@ BOOL si_NvramCommand( uint8_t command );
 //
 //------------------------------------------------------------------------------
 
-BOOL SI_EdidRead( uint8_t source, uint8_t *pDest);
-BOOL SI_EdidWrite( uint8_t target, uint8_t *pSource );
-BOOL SI_EdidLoadPortRam( uint8_t source, uint8_t port );
-uint8_t SI_EdidUpdateHdmiData ( uint8_t *pData, uint8_t port );
-BOOL SI_EdidValidHdmi( uint8_t *pData );
-BOOL SI_EdidInitialize( void );
+BOOL SI_EdidRead(int index, uint8_t source, uint8_t *pDest);
+BOOL SI_EdidWrite(int index, uint8_t target, uint8_t *pSource );
+BOOL SI_EdidLoadPortRam(int index, uint8_t source, uint8_t port );
+uint8_t SI_EdidUpdateHdmiData (uint8_t *pData, uint8_t port );
+BOOL SI_EdidValidHdmi(uint8_t *pData );
+BOOL SI_EdidInitialize(int index);
 
 #endif  // __SI_EDID_H__
 

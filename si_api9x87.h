@@ -193,26 +193,26 @@ extern uint16_t g_devType;
 //  Low-level Function Prototypes
 //------------------------------------------------------------------------------
 
-void si_DeviceRXTermControl( uint8_t portIndex, BOOL enableRX );
-void si_DeviceHpdControl( uint8_t portIndex, BOOL enableHPD );
-void si_DeviceHdcpControl( uint8_t portIndex, BOOL enableHDCP );
+void si_DeviceRXTermControl(int index, uint8_t portIndex, BOOL enableRX );
+void si_DeviceHpdControl(int index, uint8_t portIndex, BOOL enableHPD );
+void si_DeviceHdcpControl(int index, uint8_t portIndex, BOOL enableHDCP );
 
 
 //-------------------------------------------------------------------------------
 //  API Function Prototypes
 //-------------------------------------------------------------------------------
 
-uint8_t SI_DeviceStatus( uint8_t statusIndex );
-void    SI_DeviceInitRegisters ( void );
-void    SI_DeviceMute( BOOL doMute );
-void    SI_DeviceEnableOutput( BOOL enable );
-void    SI_DeviceStandbyMode( void );
-uint8_t SI_DevicePowerUpBoot( void );
-uint8_t SI_DeviceEventMonitor( void );
-BOOL    SI_DeviceBootComplete( void );
+uint8_t SI_DeviceStatus(int index, uint8_t statusIndex );
+void    SI_DeviceInitRegisters ( int index );
+void    SI_DeviceMute(int index, BOOL doMute );
+void    SI_DeviceEnableOutput(int index, BOOL enable );
+void    SI_DeviceStandbyMode(int index );
+uint8_t SI_DevicePowerUpBoot( int index );
+uint8_t SI_DeviceEventMonitor( int index );
+BOOL    SI_DeviceBootComplete( int index );
 
-uint8_t SI_PortGetNextPort( uint8_t currentPort );
-void    SI_PortSelectSource( uint8_t portIndex );
-void    SI_PortEnable( uint8_t portIndex, uint8_t newState );
+uint8_t SI_PortGetNextPort(int index, uint8_t currentPort );
+void    SI_PortSelectSource(int index, uint8_t portIndex );
+void    SI_PortEnable(int index, uint8_t portIndex, uint8_t newState );
 
 #endif  // __SI_API9287_H__

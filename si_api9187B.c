@@ -95,7 +95,7 @@ static uint8_t  l_hpdTimer      = DEM_MAX_POWERUP_HOTPLUG;
 //  Description:    Wait for EDID Boot Done status.
 //------------------------------------------------------------------------------
 
-BOOL SI_DeviceBootComplete ( void )
+BOOL SI_DeviceBootComplete (int index )
 {
     uint8_t test;
     BOOL    success = true;
@@ -105,7 +105,7 @@ BOOL SI_DeviceBootComplete ( void )
     HalTimerSet( ELAPSED_TIMER, 1 );
     for ( ;; )
     {
-        test = SiIRegioRead( REG_BSM_STAT );
+        test = SiIRegioRead(index, REG_BSM_STAT );
         if ( test & BIT_BOOT_DONE )
             break;
         if (( test & BIT_BOOT_ERROR ) || ( HalTimerElapsed() >= 4000 ))    // 4 second timeout
@@ -124,22 +124,22 @@ BOOL SI_DeviceBootComplete ( void )
 //              assure that the device is properly initialized.
 //------------------------------------------------------------------------------
 
-uint8_t SI_DevicePowerUpBoot ( void )
+uint8_t SI_DevicePowerUpBoot ( int index )
 {
     uint8_t u8Data;
     uint8_t baseAddress = 0;
 
-    u8Data = SiIRegioRead( REG_DEV_IDH_RX );    // Throw away first I2C read (chip issue)
+    u8Data = SiIRegioRead(index, REG_DEV_IDH_RX );    // Throw away first I2C read (chip issue)
 
     /* Determine SiI9287 page 0 device address. */
 
-    u8Data = SiIRegioRead( REG_DEV_IDH_RX );
+    u8Data = SiIRegioRead(index, REG_DEV_IDH_RX );
     if (( u8Data != 0x92 ) && ( u8Data != 0x91 ))
     {
         /* If page 0 access failed at 0xB0 default, try it at device ID 0xB2.   */
 
-        SiIRegioSetBase( 0, 0xB2 );
-        u8Data = SiIRegioRead( REG_DEV_IDH_RX );
+        SiIRegioSetBase(index, 0, 0xB2 );
+        u8Data = SiIRegioRead(index, REG_DEV_IDH_RX );
         if (( u8Data == 0x92 ) || ( u8Data == 0x91 ))
         {
             baseAddress = 0xB2;
@@ -154,25 +154,25 @@ uint8_t SI_DevicePowerUpBoot ( void )
     {
         /* Initialize page 9 address in case chip reset did not happen properly.    */
 
-        SiIRegioWrite( REG_SLAVE_ADDR3, 0xE0 );
+        SiIRegioWrite(index, REG_SLAVE_ADDR3, 0xE0 );
 
         /* Toggle 1.2V logic power supply enable to force reset of Power Down Domain logic. */
 
-        SiIRegioModify( REG_REGUL_PWR_ENABLE, BIT_PEN_LOGIC12V, CLEAR_BITS );
-        SiIRegioModify( REG_REGUL_PWR_ENABLE, BIT_PEN_LOGIC12V, SET_BITS );
+        SiIRegioModify(index, REG_REGUL_PWR_ENABLE, BIT_PEN_LOGIC12V, CLEAR_BITS );
+        SiIRegioModify(index, REG_REGUL_PWR_ENABLE, BIT_PEN_LOGIC12V, SET_BITS );
 
         /* Force a soft Hard Reset to ensure that the Always On Domain logic is reset.  */
 
-        SiIRegioBitToggle( REG_SPECIAL_PURPOSE, BIT_HARDRESET );
+        SiIRegioBitToggle(index, REG_SPECIAL_PURPOSE, BIT_HARDRESET );
 
         /* Wait for boot loading to be done.    */
 
-        if ( SI_DeviceBootComplete() )
+        if ( SI_DeviceBootComplete(index) )
         {
             /* Check NVRAM status to determine if it must be initialized (first time boot). */
 
 #if (DO_EDID_INIT == 1)
-            if ( !SI_EdidInitialize())
+            if ( !SI_EdidInitialize(index))
             {
                 baseAddress = 0x02;     // NVRAM initialize failed.
             }
@@ -181,7 +181,7 @@ uint8_t SI_DevicePowerUpBoot ( void )
             {
                 /* Initialize registers to the Programmers Reference power-up defaults. */
 
-                SI_DeviceInitRegisters();
+                SI_DeviceInitRegisters(index);
             }
             }
         else
@@ -203,15 +203,15 @@ uint8_t SI_DevicePowerUpBoot ( void )
 //
 //------------------------------------------------------------------------------
 
-void SI_DeviceInitRegisters ( void )
+void SI_DeviceInitRegisters ( int index )
 {
 #if (FPGA_DEBUG_CODE == 1)
-    SiIRegioSetBase( 10, 0x68 );
+    SiIRegioSetBase(index, 10, 0x68 );
 #endif
 
     /* Set up 9287B special registers and mute whilst doing the rest.   */
 
-    SiIRegioWrite( 
+    SiIRegioWrite(index, 
         REG_PAUTH_MISC_CTRL0, 
         BIT_USE_FRAME_ECC | BIT_MATCH_IND_SEL | BIT_DIS_GEN_VS_CTL3 | BIT_FIX_DELAY | BIT_RECOV_EN | BIT_VIDEO_MUTE_SYNC | BIT_AUDIO_MUTE_SYNC 
         );
@@ -219,59 +219,59 @@ void SI_DeviceInitRegisters ( void )
     /* Turn off port finite state machine and hold device in    */
     /* software reset until finished update.                    */
 
-    SiIRegioWrite( REG_PAUTH_CTRL, BIT_MP_SWAP | BIT_IGNORE_PAUTH_HPD | BIT_SKIP_NON_HDCP  );
-    SiIRegioModify( REG_SRST, BIT_SWRST, SET_BITS );
+    SiIRegioWrite(index, REG_PAUTH_CTRL, BIT_MP_SWAP | BIT_IGNORE_PAUTH_HPD | BIT_SKIP_NON_HDCP  );
+    SiIRegioModify(index, REG_SRST, BIT_SWRST, SET_BITS );
 
-    SiIRegioModify( REG_HDCP_RST, BIT_HDCP_RST, SET_BITS   ); // HDCP arbitration and OTP reset
-    SiIRegioModify( REG_HDCP_RST, BIT_HDCP_RST, CLEAR_BITS ); // Release
+    SiIRegioModify(index, REG_HDCP_RST, BIT_HDCP_RST, SET_BITS   ); // HDCP arbitration and OTP reset
+    SiIRegioModify(index, REG_HDCP_RST, BIT_HDCP_RST, CLEAR_BITS ); // Release
 
     /* Change default CBUS link bit time.   */
 
-    SiIRegioWrite( 0xC3A, 0x1A );
-    SiIRegioWrite( 0xC7A, 0x1A );
-    SiIRegioWrite( 0xCBA, 0x1A );
-    SiIRegioWrite( 0xCFA, 0x1A );
+    SiIRegioWrite(index, 0xC3A, 0x1A );
+    SiIRegioWrite(index, 0xC7A, 0x1A );
+    SiIRegioWrite(index, 0xCBA, 0x1A );
+    SiIRegioWrite(index, 0xCFA, 0x1A );
 
-    SiIRegioModify( REG_TMDS0_CCTRL1, VAL_CLK_MASK, VAL_CLK_INVERTED );
-    SiIRegioModify( REG_TMDS1_CCTRL1, VAL_CLK_MASK, VAL_CLK_INVERTED );
+    SiIRegioModify(index, REG_TMDS0_CCTRL1, VAL_CLK_MASK, VAL_CLK_INVERTED );
+    SiIRegioModify(index, REG_TMDS1_CCTRL1, VAL_CLK_MASK, VAL_CLK_INVERTED );
 
-    SiIRegioWrite( REG_SYS_CTRL2, CLEAR_BITS );
+    SiIRegioWrite(index, REG_SYS_CTRL2, CLEAR_BITS );
 
-    SiIRegioWrite( REG_FRAME_ECC_THR,    0x08 ); // Consecutive 8 frames
-    SiIRegioWrite( REG_PAUTH_ECC_THRES0, 0x0F ); // 15 ECC errors in one frame
-    SiIRegioWrite( REG_PAUTH_ECC_THRES1, 0x00 ); // 
+    SiIRegioWrite(index, REG_FRAME_ECC_THR,    0x08 ); // Consecutive 8 frames
+    SiIRegioWrite(index, REG_PAUTH_ECC_THRES0, 0x0F ); // 15 ECC errors in one frame
+    SiIRegioWrite(index, REG_PAUTH_ECC_THRES1, 0x00 ); // 
     
-    SiIRegioWrite( REG_PAUTH_RSTLEN0,  0x81 ); // 120ms since there is no FW involvement
-    SiIRegioWrite( REG_PAUTH_RSTLEN1,  0xa9 ); // 120ms is 7.5 frames for 60Hz and 3 frames for 25Hz
-    SiIRegioWrite( REG_PAUTH_RSTLEN2,  0x03 );
-    SiIRegioWrite( REG_PAUTH_RSTLEN3,  0x00 );
+    SiIRegioWrite(index, REG_PAUTH_RSTLEN0,  0x81 ); // 120ms since there is no FW involvement
+    SiIRegioWrite(index, REG_PAUTH_RSTLEN1,  0xa9 ); // 120ms is 7.5 frames for 60Hz and 3 frames for 25Hz
+    SiIRegioWrite(index, REG_PAUTH_RSTLEN2,  0x03 );
+    SiIRegioWrite(index, REG_PAUTH_RSTLEN3,  0x00 );
 
-    SiIRegioWrite( REG_PAUTH_RSTDIFF0, 0x80 );
-    SiIRegioWrite( REG_PAUTH_RSTDIFF1, 0xa9 );
-    SiIRegioWrite( REG_PAUTH_RSTDIFF2, 0x03 );
-    SiIRegioWrite( REG_PAUTH_RSTDIFF3, 0x00 );
+    SiIRegioWrite(index, REG_PAUTH_RSTDIFF0, 0x80 );
+    SiIRegioWrite(index, REG_PAUTH_RSTDIFF1, 0xa9 );
+    SiIRegioWrite(index, REG_PAUTH_RSTDIFF2, 0x03 );
+    SiIRegioWrite(index, REG_PAUTH_RSTDIFF3, 0x00 );
 
     /* Enable EDID and HPD manually so that when we release Auto-HPD,   */
     /* the power-up state is maintained.                                */
 
-    SiIRegioWrite( REG_EN_EDID, VAL_EN_DDC_ALL );           // Enable all EDID
-    SiIRegioWrite( REG_HP_CTRL, VAL_HP_PORT_ALL_HI );       // Enable all HPD
-    SiIRegioWrite( REG_HPD_HW_CTRL, MSK_INVALIDATE_ALL );   // Disable Auto-HPD control
+    SiIRegioWrite(index, REG_EN_EDID, VAL_EN_DDC_ALL );           // Enable all EDID
+    SiIRegioWrite(index, REG_HP_CTRL, VAL_HP_PORT_ALL_HI );       // Enable all HPD
+    SiIRegioWrite(index, REG_HPD_HW_CTRL, MSK_INVALIDATE_ALL );   // Disable Auto-HPD control
 
     /* Turn off CEC auto response to <Abort> command.   */
 
-    SiIRegioWrite( 0x8DF, CLEAR_BITS );
+    SiIRegioWrite(index, 0x8DF, CLEAR_BITS );
 
-    SiIRegioWrite( REG_TMDST_CTRL1, MSK_TMDS_EN_ALL );  	    // Enable TX.
+    SiIRegioWrite(index, REG_TMDST_CTRL1, MSK_TMDS_EN_ALL );  	    // Enable TX.
 
 #if (FPGA_DEBUG_CODE==1)
     {
         int i;
 
-        SI_EdidWrite( EDID_BUFFER, g_edidFPGAEdidTable );
+        SI_EdidWrite(index, EDID_BUFFER, g_edidFPGAEdidTable );
         for ( i = 0; i < 4; i++ )
         {
-            SI_EdidLoadPortRam( EDID_BUFFER, i );
+            SI_EdidLoadPortRam(index, EDID_BUFFER, i );
         }
     }
 #endif
@@ -280,15 +280,15 @@ void SI_DeviceInitRegisters ( void )
 
     /* The VGA EDID memory must be loaded manually. */
 
-    SI_EdidWrite( EDID_BUFFER, g_edidFlashEdidVgaTable );
-    SI_EdidLoadPortRam( EDID_BUFFER, EDID_RAM_VGA );
+    SI_EdidWrite(index, EDID_BUFFER, g_edidFlashEdidVgaTable );
+    SI_EdidLoadPortRam(index, EDID_BUFFER, EDID_RAM_VGA );
 #endif
 
     /* Release software reset and finite state machine. */
 
-    SiIRegioModify( REG_SRST, BIT_SWRST, CLEAR_BITS );
+    SiIRegioModify(index, REG_SRST, BIT_SWRST, CLEAR_BITS );
     HalTimerWait( 120 );    // Allow software reset to settle before enabling FSM
-    SiIRegioWrite( REG_PAUTH_CTRL, BIT_MP_SWAP | BIT_IGNORE_PAUTH_HPD | BIT_SKIP_NON_HDCP | BIT_PORT_FSM_EN  );
+    SiIRegioWrite(index, REG_PAUTH_CTRL, BIT_MP_SWAP | BIT_IGNORE_PAUTH_HPD | BIT_SKIP_NON_HDCP | BIT_PORT_FSM_EN  );
     
     l_firstPass = true;
     l_hpdTimer    = DEM_MAX_POWERUP_HOTPLUG;
@@ -302,7 +302,7 @@ void SI_DeviceInitRegisters ( void )
 //              HPD low period has expired.
 //------------------------------------------------------------------------------
 
-static void MonitorHPDState ( void )
+static void MonitorHPDState ( int index )
 {
     uint8_t         selectEqual0, selectOneHot;
     static uint8_t  hdcpPass        = 0;
@@ -326,12 +326,12 @@ static void MonitorHPDState ( void )
         l_hpdToggle--;
         if ( l_hpdToggle == DEM_RXTERM_TOGGLE_TIME )
         {
-            si_DeviceRXTermControl( l_userPortSelect, true );   // RX Termination ON on main port
+            si_DeviceRXTermControl(index, l_userPortSelect, true );   // RX Termination ON on main port
         }
         if ( l_hpdToggle == 0 )
         {
-            si_DeviceHpdControl( 0xFF, true );                  // HPD --> 1 for all ports
-            si_DeviceHdcpControl( l_userPortSelect, true );     // HDCP DDC Access enabled on main port
+            si_DeviceHpdControl(index, 0xFF, true );                  // HPD --> 1 for all ports
+            si_DeviceHdcpControl(index, l_userPortSelect, true );     // HDCP DDC Access enabled on main port
 
             DEBUG_PRINT( MSG_DBG, ( "\n[%d] HPD HI", (int)g_pass ));
         }
@@ -355,9 +355,9 @@ static void MonitorHPDState ( void )
 
                 if ( g_portPwr5v & g_mpSel0 )
                 {
-                    si_DeviceHpdControl( l_userPortSelect, false );         // HPD --> 0 for specified port
-                    si_DeviceRXTermControl( SI_PORT_ALL, false );           // RX Termination OFF for all ports
-                    si_DeviceHdcpControl( SI_PORT_ALL, false );             // HDCP DDC Access disabled for all ports
+                    si_DeviceHpdControl(index, l_userPortSelect, false );         // HPD --> 0 for specified port
+                    si_DeviceRXTermControl(index, SI_PORT_ALL, false );           // RX Termination OFF for all ports
+                    si_DeviceHdcpControl(index, SI_PORT_ALL, false );             // HDCP DDC Access disabled for all ports
 
                     l_hpdToggle = DEM_HPD_TOGGLE_TIME;                      // Make a pulse
                     DEBUG_PRINT( MSG_DBG, ( "\n[%d] MPSEL %d HPD LOW", (int)g_pass, (int)g_mpSel0) );
@@ -373,7 +373,7 @@ static void MonitorHPDState ( void )
 // Description: 
 //------------------------------------------------------------------------------
 
-static void MonitorECC ( void )
+static void MonitorECC ( int index )
 {
     static uint8_t  mpDecrypt = 0;
     static BOOL     riClearEnabled = false;
@@ -388,7 +388,7 @@ static void MonitorECC ( void )
         if ( mpDecrypt >= DEM_DECRYPT_ECC_THRESHOLD )
         {
             mpDecrypt = DEM_DECRYPT_ECC_THRESHOLD;
-            SiIRegioModify( REG_PAUTH_ECC_CTRL, REG_EN_ECC, SET_BITS ); // Enable ECC RI-Clear
+            SiIRegioModify(index, REG_PAUTH_ECC_CTRL, REG_EN_ECC, SET_BITS ); // Enable ECC RI-Clear
             riClearEnabled = true;
         }
     }
@@ -399,7 +399,7 @@ static void MonitorECC ( void )
 
     if ( riClearEnabled && (l_scdtInt || !(l_ckdt & g_auth0 & g_decrypt0 & g_mpSel0) || (g_mpSel0 != g_mpSel1) ))
     {
-        SiIRegioModify( REG_PAUTH_ECC_CTRL, BIT_EN_ECC, CLEAR_BITS );
+        SiIRegioModify(index, REG_PAUTH_ECC_CTRL, BIT_EN_ECC, CLEAR_BITS );
         riClearEnabled = false;
     }
 }   
@@ -409,7 +409,7 @@ static void MonitorECC ( void )
 // Description: Determine when to mute or unmute the AV output
 //------------------------------------------------------------------------------
 
-static void MonitorMute ( void )
+static void MonitorMute ( int index )
 {
 static uint8_t  dly4nohdcp      = 0;
 static uint8_t  no_ctl3tout     = 0;
@@ -430,7 +430,7 @@ static uint8_t  no_ctl3tout     = 0;
 #if (USE_INTERNAL_MUTE == 1)
         if ( g_outputMuted )
         {
-            SI_DeviceMute( true );
+            SI_DeviceMute(index, true );
         }
 #endif
     }
@@ -444,7 +444,7 @@ static uint8_t  no_ctl3tout     = 0;
             if ( l_hpdToggle == 0 )
             {
 #if (USE_INTERNAL_MUTE == 1)
-                SI_DeviceMute( false );
+                SI_DeviceMute(index, false );
 #endif
                 DEBUG_PRINT( MSG_DBG, ( "\n[%d] MUTE OFF: scdt:%02X AUTH: %02X DECRYPT: %02X", (int)g_pass, (int)l_scdt, (int)g_auth0, (int)g_decrypt0 ) );
                 g_outputMuted--;
@@ -513,7 +513,7 @@ static uint8_t  no_ctl3tout     = 0;
 //
 //------------------------------------------------------------------------------
 
-static void UpdateDeviceStatus ( void )
+static void UpdateDeviceStatus ( int index )
 {
     uint8_t         uData;
 
@@ -526,22 +526,22 @@ static void UpdateDeviceStatus ( void )
     /* Get a snapshot of most registers we'll need for this */
     /* pass through the DeviceEventMonitor.                 */
 
-    g_portPwr5v         = SiIRegioRead( REG_PWR5V_STATUS ) & 0x0F;
-    g_portPwr5v         |= SiIRegioRead( REG_HDMIM_CP_PAD_STAT ) & 0x0F;
-    uData = SiIRegioRead( REG_PAUTH_STAT0  );     
+    g_portPwr5v         = SiIRegioRead(index, REG_PWR5V_STATUS ) & 0x0F;
+    g_portPwr5v         |= SiIRegioRead(index, REG_HDMIM_CP_PAD_STAT ) & 0x0F;
+    uData = SiIRegioRead(index, REG_PAUTH_STAT0  );     
         g_mpSel0        = uData & MAIN_PIPE_MASK;        
-    uData = SiIRegioRead( REG_PAUTH_STAT1  ); 
+    uData = SiIRegioRead(index, REG_PAUTH_STAT1  ); 
         g_auth0         = uData & BIT_AUTH_MASK;         
         g_decrypt0      = (uData & BIT_DECRYPT_MASK) >> 4;
-    uData = SiIRegioRead( REG_C0_STATE   );   
+    uData = SiIRegioRead(index, REG_C0_STATE   );   
         l_standbyOff0   = uData & BIT_NOT_STANDBY;  
         g_pipePwr5v     = uData & ( BIT_PWR5V | BIT_MHL );
         l_scdt          = uData & BIT_SCDT;    
-    l_ckdt              = SiIRegioRead( REG_CLKDETECT_STATUS ) & VAL_CKDT_MASK;
-    l_scdtInt           = SiIRegioRead( REG_CH0_INTR2 ) & BIT_SCDT_CHG;
+    l_ckdt              = SiIRegioRead(index, REG_CLKDETECT_STATUS ) & VAL_CKDT_MASK;
+    l_scdtInt           = SiIRegioRead(index, REG_CH0_INTR2 ) & BIT_SCDT_CHG;
     if ( l_scdtInt )
     {
-        SiIRegioWrite( REG_CH0_INTR2, BIT_SCDT_CHG );
+        SiIRegioWrite(index, REG_CH0_INTR2, BIT_SCDT_CHG );
     }
 
 #if (API_DEBUG_CODE==1)
@@ -549,10 +549,10 @@ static void UpdateDeviceStatus ( void )
     g_demFlags1   |=  l_scdtInt ? DF1_SCDT_INT : 0x00;
     g_demFlags1   |=  l_scdt ? DF1_SCDT_HI  : 0x00;
 
-    uData   = SiIRegioRead( REG_HDCP0_STAT );
+    uData   = SiIRegioRead(index, REG_HDCP0_STAT );
     g_demFlags1   |=  (uData & BIT_AUTH_DONE)   ? DF1_MP_AUTH     : 0x00;
     g_demFlags1   |=  (uData & BIT_DECRYPTING)  ? DF1_MP_DECRYPT  : 0x00;
-    uData   = SiIRegioRead( REG_BSTATUS2 );
+    uData   = SiIRegioRead(index, REG_BSTATUS2 );
     g_demFlags2   &=  ~DF2_HDMI_MODE;
     g_demFlags2   |=  (uData & BIT_HDMI_MODE) ? DF2_HDMI_MODE : 0x00;
 #endif
@@ -571,13 +571,13 @@ static void UpdateDeviceStatus ( void )
 //
 //------------------------------------------------------------------------------
 
-uint8_t SI_DeviceEventMonitor ( void )
+uint8_t SI_DeviceEventMonitor ( int index )
 {
     uint8_t monitorState;
 
     g_pass++;
 
-    UpdateDeviceStatus();       // Gather info for this pass
+    UpdateDeviceStatus(index);       // Gather info for this pass
 
     if ( l_firstPass )
     {
@@ -591,8 +591,8 @@ uint8_t SI_DeviceEventMonitor ( void )
         if ( l_hpdTimer == 0 )
         {
             DEBUG_PRINT( MSG_ALWAYS, ( "\n[%d] firstpass hotplug off\n", (int)g_pass ));
-            SiIRegioWrite( REG_EN_EDID, VAL_EN_DDC_ALL );           // Enable all EDID
-            si_DeviceHpdControl( SI_PORT_ALL, true );               // Allow HPD to go high
+            SiIRegioWrite(index, REG_EN_EDID, VAL_EN_DDC_ALL );           // Enable all EDID
+            si_DeviceHpdControl(index, SI_PORT_ALL, true );               // Allow HPD to go high
             _DEBUG_( g_demFlags2   &=  ~DF2_FULL_HOTPLUG );
         }
         else 
@@ -600,10 +600,10 @@ uint8_t SI_DeviceEventMonitor ( void )
             if ( l_hpdTimer == DEM_MAX_POWERUP_HOTPLUG )
             {
                 DEBUG_PRINT( MSG_ALWAYS, ( "\n[%d] firstpass hotplug ON\n", (int)g_pass ));
-                si_DeviceHdcpControl( SI_PORT_ALL, false );         // Disable HDCP access
-                si_DeviceRXTermControl( SI_PORT_ALL, false );       // Turn off RX termination
-                SiIRegioWrite( REG_EN_EDID, VAL_EN_DDC_NONE );      // Disable all EDID
-                si_DeviceHpdControl( SI_PORT_ALL, false );          // Drive HPD low
+                si_DeviceHdcpControl(index, SI_PORT_ALL, false );         // Disable HDCP access
+                si_DeviceRXTermControl(index, SI_PORT_ALL, false );       // Turn off RX termination
+                SiIRegioWrite(index, REG_EN_EDID, VAL_EN_DDC_NONE );      // Disable all EDID
+                si_DeviceHpdControl(index, SI_PORT_ALL, false );          // Drive HPD low
                 _DEBUG_( g_demFlags2   |=  DF2_FULL_HOTPLUG );
             }
             l_hpdTimer--;
@@ -612,8 +612,8 @@ uint8_t SI_DeviceEventMonitor ( void )
 
         /* Turn on HDCP Access and RX termination for the selected port on the 9187 */
 
-        si_DeviceHdcpControl( l_userPortSelect, true );
-        si_DeviceRXTermControl( l_userPortSelect, true );
+        si_DeviceHdcpControl(index, l_userPortSelect, true );
+        si_DeviceRXTermControl(index, l_userPortSelect, true );
 
         l_firstPass = false;
         _DEBUG_( g_demFlags2   &=  ~DF2_FIRST_PASS);
@@ -660,9 +660,9 @@ uint8_t SI_DeviceEventMonitor ( void )
 
     /* The following functions must be called in the listed order.  */
 
-    MonitorHPDState();
-	MonitorMute();
-	MonitorECC();
+    MonitorHPDState(index);
+	MonitorMute(index);
+	MonitorECC(index);
 
     /* The above functions must be called in the listed order.      */
 
@@ -683,19 +683,19 @@ uint8_t SI_DeviceEventMonitor ( void )
 //              if desired.
 //------------------------------------------------------------------------------
 
-void SI_DeviceMute ( BOOL doMute )
+void SI_DeviceMute (int index, BOOL doMute )
 {
 
     if ( doMute )
     {
-        SiIRegioModify( REG_PAUTH_MISC_CTRL0, BIT_VIDEO_MUTE_SYNC | BIT_AUDIO_MUTE_SYNC, SET_BITS );
+        SiIRegioModify(index, REG_PAUTH_MISC_CTRL0, BIT_VIDEO_MUTE_SYNC | BIT_AUDIO_MUTE_SYNC, SET_BITS );
 
         DEBUG_PRINT( MSG_DBG, ( "\n[%d] ------------------ MUTE ON", (int)g_pass ));
         _DEBUG_( g_demFlags2   |=  DF2_MUTE_ON );
     }
     else
     {
-        SiIRegioModify( REG_PAUTH_MISC_CTRL0, BIT_VIDEO_MUTE_SYNC | BIT_AUDIO_MUTE_SYNC, CLEAR_BITS );
+        SiIRegioModify(index, REG_PAUTH_MISC_CTRL0, BIT_VIDEO_MUTE_SYNC | BIT_AUDIO_MUTE_SYNC, CLEAR_BITS );
 
         DEBUG_PRINT( MSG_DBG, ( "\n[%d] ------------------ MUTE OFF", (int)g_pass ));
         _DEBUG_( g_demFlags2   &=  ~DF2_MUTE_ON );
@@ -708,17 +708,17 @@ void SI_DeviceMute ( BOOL doMute )
 //
 //------------------------------------------------------------------------------
 
-void SI_PortSelectSource ( uint8_t portIndex )
+void SI_PortSelectSource (int index, uint8_t portIndex )
 {
     /* Mute before port switch to prevent possible funny images.    */
 
 #if ((USE_INTERNAL_MUTE == 1) && (DEM_MUTE_LEN_PORTCHANGE != 0))
-    SI_DeviceMute( true );
+    SI_DeviceMute(index, true );
 #endif
 
     /* Switch user select to the requested port.  The HPD stuff will be handled in DEM if needed.   */
 
-    SiIRegioModify( REG_SYS_SWTCHC2, MSK_ALL_EN, portIndex );
+    SiIRegioModify(index, REG_SYS_SWTCHC2, MSK_ALL_EN, portIndex );
     l_userPortSelect = portIndex;
     g_demFlags2 |= DF2_PORT_SWITCH_REQ;
 }
@@ -728,7 +728,7 @@ void SI_PortSelectSource ( uint8_t portIndex )
 // Description: Enable or disable RX termination for the selected port(s)
 //------------------------------------------------------------------------------
 
-void si_DeviceRXTermControl ( uint8_t portIndex, BOOL enableRX )
+void si_DeviceRXTermControl (int index, uint8_t portIndex, BOOL enableRX )
 {
     uint8_t enableVal;
 
@@ -738,11 +738,11 @@ void si_DeviceRXTermControl ( uint8_t portIndex, BOOL enableRX )
 
     if ( portIndex == SI_PORT_ALL )
     {
-        SiIRegioModify( REG_TMDS_TERMCTRL0, SET_BITS, enableVal );
+        SiIRegioModify(index, REG_TMDS_TERMCTRL0, SET_BITS, enableVal );
     }
     else 
     {
-        SiIRegioModify( REG_TMDS_TERMCTRL0, (VAL_TERM_MASK << ((portIndex % 4) * 2)), enableVal );
+        SiIRegioModify(index, REG_TMDS_TERMCTRL0, (VAL_TERM_MASK << ((portIndex % 4) * 2)), enableVal );
     }
 }
 
@@ -751,7 +751,7 @@ void si_DeviceRXTermControl ( uint8_t portIndex, BOOL enableRX )
 // Description: Enable or disable HPD for the selected port(s)
 //------------------------------------------------------------------------------
 
-void si_DeviceHpdControl ( uint8_t portIndex, BOOL enableHPD )
+void si_DeviceHpdControl (int index, uint8_t portIndex, BOOL enableHPD )
 {
     uint8_t enableVal;
 
@@ -761,11 +761,11 @@ void si_DeviceHpdControl ( uint8_t portIndex, BOOL enableHPD )
 
     if ( portIndex == SI_PORT_ALL )
     {
-        SiIRegioWrite( REG_HP_CTRL, enableVal );
+        SiIRegioWrite(index, REG_HP_CTRL, enableVal );
     }
     else 
     {
-        SiIRegioModify( REG_HP_CTRL, (0x03 << ((portIndex % 4) * 2)), enableVal );
+        SiIRegioModify(index, REG_HP_CTRL, (0x03 << ((portIndex % 4) * 2)), enableVal );
     }
 }
 
@@ -774,7 +774,7 @@ void si_DeviceHpdControl ( uint8_t portIndex, BOOL enableHPD )
 // Description: Enable or disable HDCP access for the selected port(s)
 //------------------------------------------------------------------------------
 
-void si_DeviceHdcpControl ( uint8_t portIndex, BOOL enableHDCP )
+void si_DeviceHdcpControl (int index, uint8_t portIndex, BOOL enableHDCP )
 {
     uint8_t enableVal;
 
@@ -784,11 +784,11 @@ void si_DeviceHdcpControl ( uint8_t portIndex, BOOL enableHDCP )
 
     if ( portIndex == SI_PORT_ALL )
     {
-        SiIRegioModify( REG_SYS_SWTCHC, MSK_DDC_EN, enableVal );
+        SiIRegioModify(index, REG_SYS_SWTCHC, MSK_DDC_EN, enableVal );
     }
     else 
     {
-        SiIRegioModify( REG_SYS_SWTCHC, (BIT_DDC0_EN << portIndex), enableVal );
+        SiIRegioModify(index, REG_SYS_SWTCHC, (BIT_DDC0_EN << portIndex), enableVal );
     }
 }
 
@@ -797,10 +797,10 @@ void si_DeviceHdcpControl ( uint8_t portIndex, BOOL enableHDCP )
 // Description: Set standby mode.  To exit, reboot using SI_DevicePowerUpBoot()
 //------------------------------------------------------------------------------
 
-void SI_DeviceStandbyMode ( void )
+void SI_DeviceStandbyMode ( int index )
 {
-    si_DeviceRXTermControl( SI_PORT_ALL, false );   // Disable RX termination
-    si_DeviceHdcpControl( SI_PORT_ALL, false );     // Disable HDCP DDC access
-    si_DeviceHpdControl( SI_PORT_ALL, true );       // Enable HPD
-    SiIRegioWrite( REG_EN_EDID, SET_BITS );         // Enable EDID DDC access
+    si_DeviceRXTermControl(index, SI_PORT_ALL, false );   // Disable RX termination
+    si_DeviceHdcpControl(index, SI_PORT_ALL, false );     // Disable HDCP DDC access
+    si_DeviceHpdControl(index, SI_PORT_ALL, true );       // Enable HPD
+    SiIRegioWrite(index, REG_EN_EDID, SET_BITS );         // Enable EDID DDC access
 }

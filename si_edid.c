@@ -135,7 +135,7 @@ uint8_t SI_EdidUpdateHdmiData ( uint8_t *pData, uint8_t port )
 //  Description:    Read the port EDID ram from the specified index.
 //------------------------------------------------------------------------------
 
-void si_EdidReadPortRam ( uint8_t ramIndex, uint8_t sourceOffset, uint8_t *pDest, uint16_t length )
+void si_EdidReadPortRam (int index, uint8_t ramIndex, uint8_t sourceOffset, uint8_t *pDest, uint16_t length )
 {
     uint16_t i;
     uint8_t     ramBitSelect;
@@ -151,14 +151,14 @@ void si_EdidReadPortRam ( uint8_t ramIndex, uint8_t sourceOffset, uint8_t *pDest
 
         /* Point to beginning of selected port EDID ram.    */
 
-    SiIRegioWrite( REG_EDID_FIFO_SEL, ramBitSelect );
-    SiIRegioWrite( REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 + sourceOffset );
+    SiIRegioWrite(index, REG_EDID_FIFO_SEL, ramBitSelect );
+    SiIRegioWrite(index, REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 + sourceOffset );
 
         /* Read it into the passed array.    */
 
     for ( i = 0; i < length; i++ )
     {
-        pDest[ i ] = SiIRegioRead( REG_EDID_FIFO_DATA );
+        pDest[ i ] = SiIRegioRead(index, REG_EDID_FIFO_DATA );
     }
 }
 
@@ -167,7 +167,7 @@ void si_EdidReadPortRam ( uint8_t ramIndex, uint8_t sourceOffset, uint8_t *pDest
 //  Description:    Write the selected EDID ram from the passed data
 //------------------------------------------------------------------------------
 
-void si_EdidWritePortRam ( uint8_t ramIndex, uint8_t *pSource, uint8_t sourceOffset, uint16_t length )
+void si_EdidWritePortRam (int index, uint8_t ramIndex, uint8_t *pSource, uint8_t sourceOffset, uint16_t length )
 {
     uint16_t i;
     uint8_t     ramBitSelect;
@@ -183,14 +183,14 @@ void si_EdidWritePortRam ( uint8_t ramIndex, uint8_t *pSource, uint8_t sourceOff
 
         /* Point to beginning of selected port EDID ram.    */
 
-    SiIRegioWrite( REG_EDID_FIFO_SEL, ramBitSelect );
-    SiIRegioWrite( REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 + sourceOffset );
+    SiIRegioWrite(index, REG_EDID_FIFO_SEL, ramBitSelect );
+    SiIRegioWrite(index, REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 + sourceOffset );
 
         /* Load it from the passed array. */
 
     for ( i = 0; i < length; i++ )
     {
-        SiIRegioWrite( REG_EDID_FIFO_DATA, pSource[ i] );
+        SiIRegioWrite(index, REG_EDID_FIFO_DATA, pSource[ i] );
     }
 }
 
@@ -199,20 +199,20 @@ void si_EdidWritePortRam ( uint8_t ramIndex, uint8_t *pSource, uint8_t sourceOff
 //  Description:    Read the device boot data ram.
 //------------------------------------------------------------------------------
 
-void si_EdidReadBootRam ( uint8_t *pDest, uint8_t sourceOffset, uint8_t length )
+void si_EdidReadBootRam (int index, uint8_t *pDest, uint8_t sourceOffset, uint8_t length )
 {
     uint16_t i;
 
         /* Point to beginning of selected port EDID ram.    */
 
-    SiIRegioWrite( REG_EDID_FIFO_SEL, BIT_SEL_DEVBOOT );
-    SiIRegioWrite( REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 + sourceOffset );
+    SiIRegioWrite(index, REG_EDID_FIFO_SEL, BIT_SEL_DEVBOOT );
+    SiIRegioWrite(index, REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 + sourceOffset );
 
         /* Read it into the passed array.    */
 
     for ( i = 0; i < length; i++ )
     {
-        pDest[ i ] = SiIRegioRead( REG_EDID_FIFO_DATA );
+        pDest[ i ] = SiIRegioRead(index, REG_EDID_FIFO_DATA );
     }
 }
 
@@ -221,20 +221,20 @@ void si_EdidReadBootRam ( uint8_t *pDest, uint8_t sourceOffset, uint8_t length )
 //  Description:    Write the Device Boot ram @ EDID 0 from the passed array
 //------------------------------------------------------------------------------
 
-void si_EdidWriteBootRam ( uint8_t *pSource, uint8_t sourceOffset, uint8_t length )
+void si_EdidWriteBootRam (int index, uint8_t *pSource, uint8_t sourceOffset, uint8_t length )
 {
     uint8_t i;
 
         /* Point to beginning of EDID Device Boot ram.    */
 
-    SiIRegioWrite( REG_EDID_FIFO_SEL, BIT_SEL_DEVBOOT );
-    SiIRegioWrite( REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 + sourceOffset );
+    SiIRegioWrite(index, REG_EDID_FIFO_SEL, BIT_SEL_DEVBOOT );
+    SiIRegioWrite(index, REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 + sourceOffset );
 
         /* Load it from the passed array. */
 
     for ( i = 0; i < length; i++ )
     {
-        SiIRegioWrite( REG_EDID_FIFO_DATA, pSource[ i] );
+        SiIRegioWrite(index, REG_EDID_FIFO_DATA, pSource[ i] );
     }
 }
 
@@ -243,18 +243,18 @@ void si_EdidWriteBootRam ( uint8_t *pSource, uint8_t sourceOffset, uint8_t lengt
 //  Description:    Execute the passed NVRAM command and wait for done bit.
 //------------------------------------------------------------------------------
 
-BOOL si_NvramCommand ( uint8_t command )
+BOOL si_NvramCommand (int index, uint8_t command )
 {
     uint8_t test;
     BOOL    success = true;
 
         /* Start the NVRAM program operation and wait for it to finish. */
 
-    SiIRegioWrite( REG_NVM_COMMAND, command );
+    SiIRegioWrite(index, REG_NVM_COMMAND, command );
     HalTimerSet( ELAPSED_TIMER, 1 );
     for ( ;; )
     {
-        test = SiIRegioRead( REG_NVM_COMMAND_DONE );
+        test = SiIRegioRead(index, REG_NVM_COMMAND_DONE );
         if ( test & BIT_NVM_COMMAND_DONE )
             break;
         if ( HalTimerElapsed() >= 4000 )    // 4 second timeout
@@ -272,32 +272,32 @@ BOOL si_NvramCommand ( uint8_t command )
 //  Description:    Read NVRAM EDID into the passed array.
 //------------------------------------------------------------------------------
 
-static BOOL si_EdidReadNvram ( uint8_t *pDest )
+static BOOL si_EdidReadNvram (int index, uint8_t *pDest )
 {
     uint16_t    i;
     BOOL        success = true;
 
         /* Save EDID 0 ram. */
 
-    si_EdidReadPortRam( EDID_RAM_0, 0, l_localData, EDID_TABLE_LEN );
+    si_EdidReadPortRam(index, EDID_RAM_0, 0, l_localData, EDID_TABLE_LEN );
 
         /* Copy the NVRAM data into EDID ram 0. */
 
-    SiIRegioWrite( REG_NVM_COPYTO, VAL_NVM_COPYTO_PORT0 );
-    success = si_NvramCommand( VAL_COPY_EDID );
+    SiIRegioWrite(index, REG_NVM_COPYTO, VAL_NVM_COPYTO_PORT0 );
+    success = si_NvramCommand(index, VAL_COPY_EDID );
 
         /* Read the copied data into caller's array. */
 
-    SiIRegioWrite( REG_EDID_FIFO_SEL, BIT_SEL_EDID0 );
-    SiIRegioWrite( REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 );
+    SiIRegioWrite(index, REG_EDID_FIFO_SEL, BIT_SEL_EDID0 );
+    SiIRegioWrite(index, REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 );
     for ( i = 0; i < EDID_TABLE_LEN; i++ )
     {
-       pDest[ i] = SiIRegioRead( REG_EDID_FIFO_DATA );
+       pDest[ i] = SiIRegioRead(index, REG_EDID_FIFO_DATA );
     }
 
         /* Replace the saved EDID 0 sram data.  */
 
-    si_EdidWritePortRam( EDID_RAM_0, l_localData, 0, EDID_TABLE_LEN );
+    si_EdidWritePortRam(index, EDID_RAM_0, l_localData, 0, EDID_TABLE_LEN );
     return( success );
 }
 
@@ -306,32 +306,32 @@ static BOOL si_EdidReadNvram ( uint8_t *pDest )
 //  Description:    Read NVRAM Boot data into the passed array.
 //------------------------------------------------------------------------------
 
-static BOOL si_EdidReadNvramBoot ( uint8_t *pDest )
+static BOOL si_EdidReadNvramBoot (int index, uint8_t *pDest )
 {
     uint16_t    i;
     BOOL        success;
 
         /* Save current boot ram.   */
 
-    si_EdidReadBootRam( l_localData, 0, EDID_DEVBOOT_LEN );
+    si_EdidReadBootRam(index, l_localData, 0, EDID_DEVBOOT_LEN );
 
         /* Copy the NVRAM data into EDID ram 0. */
 
-    SiIRegioWrite( REG_NVM_COPYTO, VAL_NVM_COPYTO_PORT0 );
-    success = si_NvramCommand( VAL_COPY_DEVBOOT );
+    SiIRegioWrite(index, REG_NVM_COPYTO, VAL_NVM_COPYTO_PORT0 );
+    success = si_NvramCommand(index, VAL_COPY_DEVBOOT );
 
         /* Read the copied data into caller's array. */
 
-    SiIRegioWrite( REG_EDID_FIFO_SEL, BIT_SEL_DEVBOOT );
-    SiIRegioWrite( REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 );
+    SiIRegioWrite(index, REG_EDID_FIFO_SEL, BIT_SEL_DEVBOOT );
+    SiIRegioWrite(index, REG_EDID_FIFO_ADDR, VAL_FIFO_ADDR_00 );
     for ( i = 0; i < EDID_DEVBOOT_LEN; i++ )
     {
-       pDest[ i] = SiIRegioRead( REG_EDID_FIFO_DATA );
+       pDest[ i] = SiIRegioRead(index, REG_EDID_FIFO_DATA );
     }
 
         /* Replace the saved boot sram data.    */
 
-    si_EdidWriteBootRam( l_localData, 0, EDID_DEVBOOT_LEN );
+    si_EdidWriteBootRam(index, l_localData, 0, EDID_DEVBOOT_LEN );
     return( success );
 }
 
@@ -341,16 +341,16 @@ static BOOL si_EdidReadNvramBoot ( uint8_t *pDest )
 //                  FLASH, or the extended part of the g_edidTable array.
 //------------------------------------------------------------------------------
 
-static BOOL EdidProgramNvramBoot ( uint8_t *pSource )
+static BOOL EdidProgramNvramBoot (int index, uint8_t *pSource )
 {
     /* Program data for NVRAM boot data always comes from boot data ram, so */
     /* load boot data ram with boot data from passed array.                 */
 
-    si_EdidWriteBootRam( pSource, 0, EDID_DEVBOOT_LEN );
+    si_EdidWriteBootRam(index, pSource, 0, EDID_DEVBOOT_LEN );
 
         /* Start the NVRAM program operation and wait for it to finish. */
 
-    return( si_NvramCommand( VAL_PRG_DEVBOOT ));
+    return( si_NvramCommand(index, VAL_PRG_DEVBOOT ));
 }
 
 //------------------------------------------------------------------------------
@@ -358,22 +358,22 @@ static BOOL EdidProgramNvramBoot ( uint8_t *pSource )
 //  Description:    Program the SiI9287 EDID NVRAM from passed source data
 //------------------------------------------------------------------------------
 
-static BOOL EdidProgramNvram ( uint8_t *pSource )
+static BOOL EdidProgramNvram (int index, uint8_t *pSource )
 {
     BOOL    success = true;
 
-    si_EdidReadPortRam( EDID_RAM_0, 0, l_localData, EDID_TABLE_LEN );   // Save current EDID 0 ram.
+    si_EdidReadPortRam(index, EDID_RAM_0, 0, l_localData, EDID_TABLE_LEN );   // Save current EDID 0 ram.
 
         /* Program data for NVRAM always comes from  EDID ram 0, so */
         /* load ram 0 with EDID table from requested source.        */
 
-    si_EdidWritePortRam( EDID_RAM_0, pSource, 0, EDID_TABLE_LEN );
+    si_EdidWritePortRam(index, EDID_RAM_0, pSource, 0, EDID_TABLE_LEN );
 
         /* Start the NVRAM program operation and wait for it to finish. */
 
-    success = si_NvramCommand( VAL_PRG_EDID );
+    success = si_NvramCommand(index, VAL_PRG_EDID );
 
-    si_EdidWritePortRam( EDID_RAM_0, l_localData, 0, EDID_TABLE_LEN );
+    si_EdidWritePortRam(index, EDID_RAM_0, l_localData, 0, EDID_TABLE_LEN );
     return( success );
 }
 
@@ -382,7 +382,7 @@ static BOOL EdidProgramNvram ( uint8_t *pSource )
 //  Description:    Read the selected EDID source into the passed array.
 //------------------------------------------------------------------------------
 
-BOOL SI_EdidRead( uint8_t source, uint8_t *pDest )
+BOOL SI_EdidRead(int index, uint8_t source, uint8_t *pDest )
 {
     BOOL success = true;
 
@@ -393,19 +393,19 @@ BOOL SI_EdidRead( uint8_t source, uint8_t *pDest )
         case EDID_RAM_2:
         case EDID_RAM_3:
         case EDID_RAM_4:
-            si_EdidReadPortRam( source, 0, pDest, EDID_TABLE_LEN );
+            si_EdidReadPortRam(index, source, 0, pDest, EDID_TABLE_LEN );
             break;
         case EDID_RAM_VGA:
-            si_EdidReadPortRam( source, 0, pDest, EDID_VGA_TABLE_LEN );
+            si_EdidReadPortRam(index, source, 0, pDest, EDID_VGA_TABLE_LEN );
             break;
         case EDID_RAM_BOOT:
-            si_EdidReadBootRam( pDest, 0, EDID_DEVBOOT_LEN );
+            si_EdidReadBootRam(index, pDest, 0, EDID_DEVBOOT_LEN );
             break;
         case EDID_NVRAM:
-            success = si_EdidReadNvram( pDest );
+            success = si_EdidReadNvram(index, pDest );
             break;
         case EDID_NVRAM_BOOT:
-            success = si_EdidReadNvramBoot( pDest );
+            success = si_EdidReadNvramBoot(index, pDest );
             break;
         default:
             success = false;
@@ -420,7 +420,7 @@ BOOL SI_EdidRead( uint8_t source, uint8_t *pDest )
 //  Description:    Write the selected EDID target from the passed array.
 //------------------------------------------------------------------------------
 
-BOOL SI_EdidWrite ( uint8_t target, uint8_t *pSource )
+BOOL SI_EdidWrite (int index, uint8_t target, uint8_t *pSource )
 {
     BOOL success = true;
 
@@ -431,19 +431,19 @@ BOOL SI_EdidWrite ( uint8_t target, uint8_t *pSource )
         case EDID_RAM_2:
         case EDID_RAM_3:
         case EDID_RAM_4:
-            si_EdidWritePortRam( target, pSource, 0, EDID_TABLE_LEN );
+            si_EdidWritePortRam(index, target, pSource, 0, EDID_TABLE_LEN );
             break;
         case EDID_RAM_VGA:
-            si_EdidWritePortRam( target, pSource, 0, EDID_VGA_TABLE_LEN );
+            si_EdidWritePortRam(index, target, pSource, 0, EDID_VGA_TABLE_LEN );
             break;
         case EDID_RAM_BOOT:
-            si_EdidWriteBootRam( pSource, 0, EDID_DEVBOOT_LEN );
+            si_EdidWriteBootRam(index, pSource, 0, EDID_DEVBOOT_LEN );
             break;
         case EDID_NVRAM:
-            success = EdidProgramNvram( pSource );
+            success = EdidProgramNvram(index, pSource );
             break;
         case EDID_NVRAM_BOOT:
-            success = EdidProgramNvramBoot( pSource );
+            success = EdidProgramNvramBoot(index, pSource );
             break;
         case EDID_BUFFER:
             memcpy( l_localData, pSource, EDID_TABLE_LEN );
@@ -464,22 +464,22 @@ BOOL SI_EdidWrite ( uint8_t target, uint8_t *pSource )
 //        will have to be performed by the caller.
 //------------------------------------------------------------------------------
 
-BOOL SI_EdidLoadPortRam ( uint8_t source, uint8_t port )
+BOOL SI_EdidLoadPortRam (int index, uint8_t source, uint8_t port )
 {
     BOOL success = true;
 
-    SI_EdidRead( source, l_localData );
+    SI_EdidRead(index, source, l_localData );
 
     if ( port < EDID_RAM_VGA )
     {
-        success = (SI_EdidUpdateHdmiData( l_localData, port ) != 0xFF );
+        success = (SI_EdidUpdateHdmiData(l_localData, port ) != 0xFF );
     }
 
         /* Write to selected EDID ram.  */
 
     if ( success )
     {
-        si_EdidWritePortRam( port, l_localData, 0, EDID_TABLE_LEN );
+        si_EdidWritePortRam(index, port, l_localData, 0, EDID_TABLE_LEN );
     }
     return( success );
 }
@@ -489,22 +489,22 @@ BOOL SI_EdidLoadPortRam ( uint8_t source, uint8_t port )
 //  Description:    Check to see if the NVRAM has been initialized and do it if needed.
 //------------------------------------------------------------------------------
 
-BOOL SI_EdidInitialize ( void )
+BOOL SI_EdidInitialize (int index )
 {
     BOOL success = true;
 
-    if ((SiIRegioRead( REG_NVM_STAT ) != VAL_NVM_VALID))
+    if ((SiIRegioRead(index, REG_NVM_STAT ) != VAL_NVM_VALID))
     {
         DEBUG_PRINT( MSG_ALWAYS, ( "\nNVRAM NOT INITIALIZED, initializing..." ));
-        success = SI_EdidWrite( EDID_NVRAM_BOOT, (uint8_t *)&g_edidFlashDevBootData );
+        success = SI_EdidWrite(index, EDID_NVRAM_BOOT, (uint8_t *)&g_edidFlashDevBootData );
         if ( success )
         {
-            success = SI_EdidWrite( EDID_NVRAM, (uint8_t *)g_edidFlashEdidTable );
+            success = SI_EdidWrite(index, EDID_NVRAM, (uint8_t *)g_edidFlashEdidTable );
 
             /* Force a boot load to get the new EDID data from the NVRAM to the chip.   */
 
-            SiIRegioWrite( REG_BSM_INIT, BIT_BSM_INIT );
-            success = SI_DeviceBootComplete();
+            SiIRegioWrite(index, REG_BSM_INIT, BIT_BSM_INIT );
+            success = SI_DeviceBootComplete(index);
         }
     }
 

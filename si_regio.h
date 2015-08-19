@@ -34,12 +34,12 @@
 //  Silicon Image Device Register I/O Function Prototypes
 //-------------------------------------------------------------------------------
 
-uint8_t SiIRegioRead( uint16_t regAddr );
-void    SiIRegioWrite( uint16_t regAddr, uint8_t value);
-void    SiIRegioModify( uint16_t regAddr, uint8_t mask, uint8_t value);
-void    SiIRegioBitToggle( uint16_t regAddr, uint8_t mask);
+uint8_t SiIRegioRead(int index, uint16_t regAddr );
+void    SiIRegioWrite(int index, uint16_t regAddr, uint8_t value);
+void    SiIRegioModify(int index, uint16_t regAddr, uint8_t mask, uint8_t value);
+void    SiIRegioBitToggle(int index, uint16_t regAddr, uint8_t mask);
 void    SiIRegioReadBlock( uint16_t regAddr, uint8_t* buffer, uint16_t length);
 void    SiIRegioWriteBlock( uint16_t regAddr, uint8_t* buffer, uint16_t length);
 
-void    SiIRegioSetBase( uint8_t page, uint8_t newID );
+void    SiIRegioSetBase(int index, uint8_t page, uint8_t newID );
 

@@ -190,7 +190,7 @@ void CpUpdateBoardSettings( void );
 void CpBoardStartup( void );
 void CpSetPortLEDs( uint8_t newState );
 void CpBlinkTilReset( uint8_t leds );
-void CpDisplayChipInfo( void );
+void CpDisplayChipInfo( int index );
 void CpPowerControl( uint8_t newPowerState );
 uint8_t CpReadRotarySwitch( uint8_t iWantItNow );
 void CpDisplayData ( uint8_t msgLevel, uint8_t *pData, uint16_t length );

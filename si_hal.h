@@ -14,6 +14,7 @@
 #define __HAL_H__
 #include "si_datatypes.h"
 //#include "at89c51xd2.h"
+#include "stm8s.h"
 
 //-------------------------------------------------------------------------------
 //  HAL Macros
@@ -63,8 +64,8 @@ uint8_t HalVersionFPGA( BOOL wantMajor );
 //  I2C Master BUS Interface
 //-------------------------------------------------------------------------------
 
-uint8_t HalI2cBus0ReadByte( uint8_t device_id, uint8_t addr );
-void HalI2cBus0WriteByte( uint8_t deviceID, uint8_t offset, uint8_t value );
+uint8_t HalI2cBus0ReadByte(int index, uint8_t device_id, uint8_t addr );
+void HalI2cBus0WriteByte(int index, uint8_t deviceID, uint8_t offset, uint8_t value );
 BOOL HalI2cBus0ReadBlock( uint8_t deviceID, uint8_t addr, uint8_t *p_data, uint16_t nbytes );
 BOOL HalI2cBus0WriteBlock( uint8_t device_id, uint8_t addr, uint8_t *p_data, uint16_t nbytes );
 BOOL HalI2cBus016ReadBlock( uint8_t device_id, uint16_t addr, uint8_t *p_data, uint16_t nbytes );

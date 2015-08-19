@@ -111,14 +111,14 @@ void CpBlinkTilReset ( uint8_t leds )
 // Description: Read and display chip model and revision.
 //------------------------------------------------------------------------------
 
-void CpDisplayChipInfo( void )
+void CpDisplayChipInfo( int index )
 {
     uint16_t    temp;
     uint8_t     rev;
 
-    temp = ((uint16_t)SiIRegioRead( REG_DEV_IDH_RX)) << 8;
-    temp |= SiIRegioRead( REG_DEV_IDL_RX );
-    rev = SiIRegioRead( REG_DEV_REV );
+    temp = ((uint16_t)SiIRegioRead(index, REG_DEV_IDH_RX)) << 8;
+    temp |= SiIRegioRead(index, REG_DEV_IDL_RX );
+    rev = SiIRegioRead(index, REG_DEV_REV );
     DEBUG_PRINT( MSG_ALWAYS,( "Silicon Image Device: %04X, rev %02X\n\n", temp, (int)rev ));
 
     if (( temp != 0x9287 ) && ( temp != 0x9285 ) && ( temp != 0x9187 ))
