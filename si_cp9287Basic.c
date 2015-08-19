@@ -63,7 +63,10 @@ void main ( void )
     HalInitialize();
     HalTimerInit();
     HalUartInit();
-
+	HalTimerWait(100);
+   GPIOC->DDR |=  0x30;            
+   GPIOC->CR1 |=  0x30;
+   GPIOC->ODR |= 0x30;
     /* Perform a hard reset on the device to ensure that it is in a known   */
     /* state (also downloads a fresh copy of EDID from NVRAM).              */
 
@@ -74,20 +77,22 @@ void main ( void )
         DEBUG_PRINT( MSG_ALWAYS, ( "0 FAILED - " ));
     }
     DEBUG_PRINT(MSG_ALWAYS,("\n0 Base Address: %02X  BSM Status: %02X\n", (int)u8Data, (int)SiIRegioRead(0, REG_BSM_STAT )));
-    u8Data = SI_DevicePowerUpBoot(1);
+    /*u8Data = SI_DevicePowerUpBoot(1);
     if ( u8Data <= 0x02 )
     {
         DEBUG_PRINT( MSG_ALWAYS, ( "1 FAILED - " ));
     }
     DEBUG_PRINT(MSG_ALWAYS,("\n1 Base Address: %02X  BSM Status: %02X\n", (int)u8Data, (int)SiIRegioRead(1, REG_BSM_STAT )));
+*/
 
     CpDisplayChipInfo(0);
-	CpDisplayChipInfo(1);
+	//CpDisplayChipInfo(1);
     //HalTimerSet( TIMER_POLLING, DEM_POLLING_DELAY );
     while ( 1 )
     {
+   		HalTimerWait(100);
        process(0);
-	   process(1);
+	  // process(1);
     }
 }
 

@@ -1,10 +1,15 @@
 #include "si_hal.h"
 uint8_t     g_halMsgLevel=0x0;
-u16 TIM4_tout;
+volatile u16 TIM4_tout;
 #define dead_time() { /* _asm("nop"); _asm("nop"); */ }
 #define delay(a)          { TIM4_tout= a; while(TIM4_tout); }
 #define tout()            (TIM4_tout)
 #define set_tout_ms(a)    { TIM4_tout= a; }
+volatile u16 TIM2_tout,set;
+#define dead_time2() { /* _asm("nop"); _asm("nop"); */ }
+#define delay2(a)          { TIM2_tout= a; while(TIM2_tout); }
+//#define tout3()            (TIM3_tout)
+//#define set_tout_ms3(a)    { TIM3_tout= a; }
 
 @far @interrupt void TIM4InterruptHandle (void) 
 {
@@ -17,6 +22,31 @@ u16 TIM4_tout;
       _asm("nop");
   while(dly--);
 }
+void set_tout_ms2(u16 a)
+{ 
+	TIM2_tout= a; 
+}
+u16 tout2()
+{
+	return TIM2_tout;
+}
+@far @interrupt void TIM2InterruptHandle (void) 
+{
+  u8 dly= 10;
+  
+  TIM2->SR1= 0;
+  TIM2_tout++;
+  if(TIM2_tout==0xffff)
+  {
+  	TIM2_tout=0;
+	_asm("nop");
+  }
+  //if(TIM3_tout)
+  //  if(--TIM3_tout == 0)
+  //    _asm("nop");
+  while(dly--);
+}
+
 @far @interrupt void I2C_error_Interrupt_Handler (void) 
 {
 	I2C->SR2= 0;
@@ -33,7 +63,18 @@ uint8_t HalTimerExpired( uint8_t timer )
 }
 void HalTimerInit( void )
 {
-
+	TIM4->ARR = 0x10;                // init timer 4 1ms inetrrupts
+	TIM4->PSCR= 4;
+	TIM4->IER = 1;
+	TIM4->CR1 |= 1;
+	TIM2->ARRL = 0x08;                // init timer 4 1ms inetrrupts
+	TIM2->ARRH = 0x00;
+	TIM2->PSCR= 0;
+	TIM2->IER = 1;
+	TIM2->CR1 |= 1;
+	TIM4_tout=0;
+	TIM2_tout=0;
+	enableInterrupts();
 }
 void    HalUartInit( void )
 {
@@ -159,28 +200,27 @@ uint8_t HalI2cBus0ReadByte(int index, uint8_t device_id, uint8_t addr )
 }
 void    HalTimerSet( uint8_t timer, uint16_t m_sec )
 {
-	set_tout_ms(m_sec);
+	set_tout_ms2(m_sec);
 }
 uint16_t HalTimerElapsed ( void )
 {
-	return 0;
+	return TIM2_tout;
 }
 BOOL    HalInitialize( void )
 {	
+	
+	//CLK->CKDIVR &= (uint8_t)(~CLK_CKDIVR_HSIDIV);
+  /* Set High speed internal clock prescaler */
+  //CLK->CKDIVR |= (uint8_t)0x00;
 	#ifdef FAST_I2C_MODE
   CLK->CKDIVR = 0x00;             // sys clock / 1
 	#else
   CLK->CKDIVR = 0x01;             // sys clock / 2
 	#endif
-     TIM4->ARR = 0x80;                // init timer 4 1ms inetrrupts
-	TIM4->PSCR= 7;
-	TIM4->IER = 1;
-	TIM4->CR1 |= 1;
-  
 	GPIOB->ODR |= 0x30;                //define SDA, SCL outputs, HiZ, Open drain, Fast
 	GPIOB->DDR |= 0x30;
 	GPIOB->CR2 |= 0x30;
-
+	//CLK->PCKENR1 |=CLK_PCKENR1_TIM2;
 #ifdef FAST_I2C_MODE
 	I2C->FREQR = 16;               // input clock to I2C - 16MHz 
 	I2C->CCRL = 15;                // 900/62.5= 15, (SCLhi must be at least 600+300=900ns!)
@@ -210,6 +250,10 @@ BOOL HalI2cBus0WriteBlock( uint8_t device_id, uint8_t addr, uint8_t *p_data, uin
 }
 void HalTimerWait( uint16_t m_sec )
 {
+	//set_tout_ms(m_sec);
+	//while(TIM4_tout>0);
+	set_tout_ms2(1);
+	while(TIM2_tout<m_sec);
 }
 
 

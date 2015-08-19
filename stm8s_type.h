@@ -70,11 +70,11 @@ typedef enum {
 }
 FlagStatus, ITStatus, BitStatus;
 
-typedef enum {
-  DISABLE = 0,
-  ENABLE = !DISABLE
-}
-FunctionalState;
+//typedef enum {
+//  DISABLE = 0,
+//  ENABLE = !DISABLE
+//}
+//FunctionalState;
 
 #define IS_FUNCTIONALSTATE_OK(VALUE) ( (VALUE == ENABLE) || (VALUE == DISABLE) )
 

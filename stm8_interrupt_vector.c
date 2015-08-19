@@ -1,6 +1,9 @@
 /*	BASIC INTERRUPT VECTOR TABLE FOR STM8 devices
  *	Copyright (c) 2007 STMicroelectronics
  */
+@far @interrupt void I2C_error_Interrupt_Handler (void);
+@far @interrupt void TIM4InterruptHandle (void);
+@far @interrupt void TIM2InterruptHandle (void);
 
 typedef void @far (*interrupt_handler_t)(void);
 
@@ -35,21 +38,16 @@ struct interrupt_vector const _vectab[] = {
 	{0x82, NonHandledInterrupt}, /* irq10 */
 	{0x82, NonHandledInterrupt}, /* irq11 */
 	{0x82, NonHandledInterrupt}, /* irq12 */
-	{0x82, NonHandledInterrupt}, /* irq13 */
+	{0x82, TIM2InterruptHandle}, /* irq13 */
 	{0x82, NonHandledInterrupt}, /* irq14 */
 	{0x82, NonHandledInterrupt}, /* irq15 */
 	{0x82, NonHandledInterrupt}, /* irq16 */
 	{0x82, NonHandledInterrupt}, /* irq17 */
 	{0x82, NonHandledInterrupt}, /* irq18 */
-	{0x82, NonHandledInterrupt}, /* irq19 */
+	{0x82, I2C_error_Interrupt_Handler}, /* irq19 */
 	{0x82, NonHandledInterrupt}, /* irq20 */
 	{0x82, NonHandledInterrupt}, /* irq21 */
 	{0x82, NonHandledInterrupt}, /* irq22 */
-	{0x82, NonHandledInterrupt}, /* irq23 */
+	{0x82, TIM4InterruptHandle}, /* irq23 */
 	{0x82, NonHandledInterrupt}, /* irq24 */
-	{0x82, NonHandledInterrupt}, /* irq25 */
-	{0x82, NonHandledInterrupt}, /* irq26 */
-	{0x82, NonHandledInterrupt}, /* irq27 */
-	{0x82, NonHandledInterrupt}, /* irq28 */
-	{0x82, NonHandledInterrupt}, /* irq29 */
 };
